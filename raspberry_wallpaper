@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+# raspberry_wallpaper
+# changes wallpaper to a slideshow of 14 (configurable)
+# newest Weronika Zalazinska's (http://raspberryandred.blogspot.com) photos!
+# requires beatifulsoup4, urllib2, works only with gnome3/unity
+
+# copyright Michal Glapa, 2013
+
+import urllib2
+import bs4
+from subprocess import check_call, check_output, call
+import sys
+import os
+import time
+import random
+
+
+# Wait till the connection estabilishes (useful when having raspberry_wallpaper in autostart)
+time.sleep(30)
+
+home = os.path.expanduser("~/")
+photos = home+".raspberry_wallpaper/"
+
+# If no directory '.raspberry_wallpaper'
+try:
+    check_output(['ls', photos])
+except:
+    call(['mkdir', photos])
+
+# clean all the photos
+call(['rm',photos+"*"])
+print "Directory created and made empty"
+
+# check connection to R&R
+try:
+    s = urllib2.urlopen("http://raspberryandred.blogspot.com",None, 30)
+except:
+    print "Goodbye idk what happened"
+    sys.exit(1)
+print "Page downloaded"
+#Download new bunch of photos
+
+try:
+    soup = bs4.BeautifulSoup(s)
+    addresses = [str(x.get('src')) for x in soup.find_all('img')[2:16] ]
+except:
+    print "An error occured while reading r&r homepage. Perhaps connection problem occured, try again."
+    os.exit(1)
+    print i
+
+for i in range(len(addresses)):
+    address = addresses[i]
+    path = photos+str(i)+".jpg"
+    call(['wget','-q',address,'-O',path])
+    print "Photo "+str(i+1) +"/"+str(len(addresses))+ " downloaded"
+
+#start serving
+
+
+
+for i in range(10000):
+    path = photos + str(random.choice(range(len(addresses))))+".jpg"
+    print "Setting wallpaper = " + path
+    call(['gsettings','set','org.gnome.desktop.background', 'picture-uri', 'file://'+path])
+    print "Wallpaper set"
+    time.sleep(10)
